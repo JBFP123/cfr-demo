@@ -335,8 +335,8 @@
             <div class="row">
               <div>
                 <h3>Water Heater Replacement</h3>
-                <p class="muted">Sarah Mitchell</p>
-                <p class="muted small">214 Ridgeline Dr, Denton, TX</p>
+                <p class="muted">Taylor Brooks</p>
+                <p class="muted small">1200 Demo Dr, Anytown, TX</p>
               </div>
               <span class="pill green">Completed</span>
             </div>
@@ -345,7 +345,7 @@
             <div class="row">
               <div>
                 <h3>AC Tune-Up</h3>
-                <p class="muted">Marcus Lee</p>
+                <p class="muted">Jamie Carter</p>
                 <p class="muted small">Tomorrow, 9:00 AM</p>
               </div>
               <span class="pill blue">Scheduled</span>
@@ -365,7 +365,7 @@
         </div>
         <div class="screen-body">
           <p class="small muted" style="margin-top:0;">Customer</p>
-          <p style="margin:2px 0 14px;font-weight:700;">Sarah Mitchell</p>
+          <p style="margin:2px 0 14px;font-weight:700;">Taylor Brooks</p>
 
           <div class="card">
             <div class="line-item"><span>Water Heater Unit</span><span>$850.00</span></div>
@@ -382,7 +382,7 @@
               </label>
             </div>
             <p class="setting-caption" id="builderCaption">
-              Customers pay one price, no matter how they pay. Ace Plumbing absorbs the real card cost — about 3% + $0.25 per transaction — on every card payment.
+              Customers pay one price, no matter how they pay. Acme Plumbing absorbs the real card cost — about 3% + $0.25 per transaction — on every card payment.
             </p>
           </div>
 
@@ -402,7 +402,7 @@
           </div>
           <h2 style="margin:0 0 8px;">Invoice #1092 Sent</h2>
           <p class="muted small" style="max-width:260px;line-height:1.5;">
-            Sarah Mitchell will get a text and email with a secure link to view and pay this invoice.
+            Taylor Brooks will get a text and email with a secure link to view and pay this invoice.
           </p>
           <div style="width:100%;margin-top:28px;">
             <button class="btn-primary" onclick="goTo(3)">View Customer's View</button>
@@ -420,7 +420,7 @@
           <div class="biz-header">
             <div class="fp-logo">AP</div>
             <div>
-              <h2>Ace Plumbing &amp; HVAC</h2>
+              <h2>Acme Plumbing &amp; HVAC</h2>
               <p>Invoice #1092 · Due Jul 24, 2026</p>
             </div>
           </div>
@@ -465,7 +465,7 @@
       <div class="screen" data-screen="4">
         <div class="app-header">
           <button class="back-btn" onclick="goTo(3)">‹</button>
-          <div class="title">Pay Ace Plumbing &amp; HVAC</div>
+          <div class="title">Pay Acme Plumbing &amp; HVAC</div>
         </div>
         <div class="screen-body">
           <div class="amount-due" id="amountDue">$1,000.00</div>
@@ -506,7 +506,7 @@
             <svg viewBox="0 0 24 24" fill="none"><path d="M4 12.5L9 17.5L20 6.5" stroke="#0F7A57" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
           <h2 style="margin:0 0 4px;">Payment Successful</h2>
-          <p class="muted small" id="receiptSub">Sarah Mitchell paid $1,000.00 via Bank Transfer.</p>
+          <p class="muted small" id="receiptSub">Taylor Brooks paid $1,000.00 via Bank Transfer.</p>
 
           <div class="receipt-box">
             <div class="receipt-row"><span class="muted">Subtotal</span><span>$1,000.00</span></div>
@@ -682,7 +682,7 @@
     document.getElementById('dualToggleBuilder').checked = state.dual;
     document.getElementById('builderCaption').textContent = state.dual
       ? 'Shows customers a cash price and a card price on every invoice, so card processing costs are covered — disclosed clearly, legal in all 50 states.'
-      : 'Customers pay one price, no matter how they pay. Ace Plumbing absorbs the real card cost — about 3% + $0.25 per transaction — on every card payment.';
+      : 'Customers pay one price, no matter how they pay. Acme Plumbing absorbs the real card cost — about 3% + $0.25 per transaction — on every card payment.';
 
     // customer invoice view (screen 3)
     document.getElementById('totalsSingle').style.display = state.dual ? 'none' : 'block';
@@ -702,7 +702,7 @@
 
     // receipt screen (screen 5)
     const methodLabel = state.method === 'card' ? 'Credit/Debit Card' : 'Bank Transfer';
-    document.getElementById('receiptSub').textContent = 'Sarah Mitchell paid ' + fmt(amount) + ' via ' + methodLabel + '.';
+    document.getElementById('receiptSub').textContent = 'Taylor Brooks paid ' + fmt(amount) + ' via ' + methodLabel + '.';
     const showFeeRow = state.dual && state.method === 'card';
     const showSavedRow = !state.dual && state.method === 'card';
     document.getElementById('receiptFeeRow').style.display = showFeeRow ? 'flex' : 'none';
@@ -721,13 +721,13 @@
       document.getElementById('ownerWhoSub').textContent = 'Bank transfers have no card network fee to cover.';
       document.getElementById('ownerFeeValue').className = 'stat-value';
     } else if (state.dual) {
-      document.getElementById('ownerFeeSub').textContent = 'What Ace Plumbing pays its processor to accept this card (3% + $0.25/transaction).';
+      document.getElementById('ownerFeeSub').textContent = 'What Acme Plumbing pays its processor to accept this card (3% + $0.25/transaction).';
       document.getElementById('ownerWhoValue').textContent = 'Customer, via the card price';
       document.getElementById('ownerWhoSub').textContent = 'The $' + feeAmount.toFixed(2) + ' card price covers the $' + standardFeeAmount.toFixed(2) + ' real cost, with $' + (feeAmount - standardFeeAmount).toFixed(2) + ' left over.';
       document.getElementById('ownerFeeValue').className = 'stat-value green';
     } else {
-      document.getElementById('ownerFeeSub').textContent = 'What Ace Plumbing pays its processor to accept this card (3% + $0.25/transaction).';
-      document.getElementById('ownerWhoValue').textContent = 'Ace Plumbing (absorbed)';
+      document.getElementById('ownerFeeSub').textContent = 'What Acme Plumbing pays its processor to accept this card (3% + $0.25/transaction).';
+      document.getElementById('ownerWhoValue').textContent = 'Acme Plumbing (absorbed)';
       document.getElementById('ownerWhoSub').textContent = 'Without dual pricing, this comes straight out of the job\'s $1,000 margin — not shown anywhere on the invoice.';
       document.getElementById('ownerFeeValue').className = 'stat-value amber';
     }
