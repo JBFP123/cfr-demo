@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FieldPulse — Card Fee Recovery (CFR) Demos</title>
+<style>
+  :root{
+    --fp-blue:#155EEF;
+    --fp-blue-dark:#0B3FAE;
+    --bg:#F3F5FA;
+    --card:#FFFFFF;
+    --border:#E4E7EC;
+    --text:#101323;
+    --muted:#6B7280;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:48px 20px;
+  }
+  header{text-align:center;max-width:640px;margin-bottom:40px}
+  .logo{
+    display:inline-block;
+    font-weight:800;
+    font-size:14px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--fp-blue);
+    margin-bottom:16px;
+  }
+  h1{font-size:30px;line-height:1.2;margin:0 0 12px}
+  .sub{color:var(--muted);font-size:16px;line-height:1.5;margin:0}
+  .cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:20px;
+    width:100%;
+    max-width:760px;
+  }
+  a.card{
+    display:block;
+    text-decoration:none;
+    color:inherit;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:28px;
+    transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  }
+  a.card:hover{
+    transform:translateY(-3px);
+    box-shadow:0 12px 28px rgba(16,19,35,.10);
+    border-color:var(--fp-blue);
+  }
+  .icon{font-size:32px;margin-bottom:14px}
+  .card h2{font-size:19px;margin:0 0 8px}
+  .card p{color:var(--muted);font-size:14px;line-height:1.5;margin:0 0 16px}
+  .go{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-weight:600;
+    font-size:14px;
+    color:var(--fp-blue);
+  }
+  footer{margin-top:48px;color:var(--muted);font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+  <header>
+    <span class="logo">FieldPulse</span>
+    <h1>Card Fee Recovery (CFR) Demos</h1>
+    <p class="sub">Interactive prototypes showing how Card Fee Recovery works across the FieldPulse mobile app and desktop back office. Toggle CFR on/off and switch payment methods to see the impact end to end.</p>
+  </header>
+
+  <div class="cards">
+    <a class="card" href="mobile-demo.html">
+      <div class="icon">📱</div>
+      <h2>Mobile App Demo</h2>
+      <p>Mobile app-frame walkthrough: job → invoice → customer view → payment → receipt → business impact, with CFR and payment-method toggles.</p>
+      <span class="go">Open demo →</span>
+    </a>
+
+    <a class="card" href="desktop-demo.html">
+      <div class="icon">🖥️</div>
+      <h2>Desktop Back Office Demo</h2>
+      <p>Desktop web-app walkthrough: Invoices → Invoice Record (with the CFR setting) → Take Payment → Payments → Deposits → Business Impact.</p>
+      <span class="go">Open demo →</span>
+    </a>
+  </div>
+
+  <footer>FieldPulse · Internal demo</footer>
+</body>
+</html>

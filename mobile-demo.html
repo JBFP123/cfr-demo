@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FieldPulse — Card Fee Recovery (Dual Pricing) Demo</title>
+<style>
+  :root{
+    --fp-blue:#155EEF;
+    --fp-blue-dark:#0B3FAE;
+    --bg:#F3F5FA;
+    --card:#FFFFFF;
+    --border:#E4E7EC;
+    --text:#101323;
+    --muted:#6B7280;
+    --green:#0F7A57;
+    --green-bg:#E6F6EF;
+    --amber-bg:#FFF4E5;
+    --amber:#B54708;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    gap:40px;
+    padding:48px 24px;
+  }
+
+  /* ---------- Phone ---------- */
+  .phone{
+    width:380px;
+    height:800px;
+    background:#111318;
+    border-radius:48px;
+    padding:12px;
+    box-shadow:0 40px 80px rgba(16,19,35,.28), 0 8px 24px rgba(16,19,35,.15);
+    flex-shrink:0;
+    position:relative;
+  }
+  .phone-screen{
+    width:100%;
+    height:100%;
+    background:#fff;
+    border-radius:36px;
+    overflow:hidden;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+  }
+  .notch{
+    position:absolute;
+    top:12px;left:50%;
+    transform:translateX(-50%);
+    width:120px;height:22px;
+    background:#111318;
+    border-radius:14px;
+    z-index:5;
+  }
+  .status-bar{
+    height:40px;
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 26px;
+    font-size:13px;
+    font-weight:600;
+    color:#101323;
+  }
+  .status-bar .icons{display:flex;gap:5px;align-items:center;}
+
+  .screens{flex:1;position:relative;overflow:hidden;}
+  .screen{
+    position:absolute;inset:0;
+    display:none;
+    flex-direction:column;
+    background:#fff;
+  }
+  .screen.active{display:flex;}
+
+  .app-header{
+    display:flex;align-items:center;gap:10px;
+    padding:10px 16px;
+    border-bottom:1px solid var(--border);
+    flex-shrink:0;
+  }
+  .app-header .title{font-size:16px;font-weight:700;flex:1;}
+  .back-btn{
+    width:30px;height:30px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    background:#F2F4F7;color:var(--fp-blue);font-size:18px;font-weight:700;
+    cursor:pointer;border:none;
+  }
+  .fp-logo{
+    width:30px;height:30px;border-radius:8px;
+    background:var(--fp-blue);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:800;letter-spacing:.5px;
+  }
+
+  .screen-body{flex:1;overflow-y:auto;padding:16px;}
+  .screen-body::-webkit-scrollbar{display:none;}
+
+  .muted{color:var(--muted);}
+  .small{font-size:12px;}
+
+  /* generic cards / lists */
+  .card{
+    background:#fff;border:1px solid var(--border);
+    border-radius:14px;padding:14px;margin-bottom:12px;
+  }
+  .pill{
+    display:inline-block;padding:3px 10px;border-radius:20px;
+    font-size:11px;font-weight:700;
+  }
+  .pill.green{background:var(--green-bg);color:var(--green);}
+  .pill.blue{background:#EAF0FF;color:var(--fp-blue);}
+
+  .btn-primary{
+    display:block;width:100%;padding:13px 16px;border-radius:12px;
+    background:var(--fp-blue);color:#fff;border:none;
+    font-size:15px;font-weight:700;cursor:pointer;text-align:center;
+  }
+  .btn-primary:active{background:var(--fp-blue-dark);}
+  .btn-secondary{
+    display:block;width:100%;padding:13px 16px;border-radius:12px;
+    background:#fff;color:var(--fp-blue);border:1.5px solid var(--fp-blue);
+    font-size:14px;font-weight:700;cursor:pointer;text-align:center;margin-top:8px;
+  }
+
+  /* Screen 0: job list */
+  .job-card .row{display:flex;justify-content:space-between;align-items:flex-start;}
+  .job-card h3{margin:0 0 4px;font-size:15px;}
+  .job-card p{margin:0;font-size:13px;}
+
+  /* Screen 1: invoice builder */
+  .line-item{display:flex;justify-content:space-between;padding:9px 0;font-size:14px;border-bottom:1px solid var(--border);}
+  .line-item:last-child{border-bottom:none;}
+  .totals-row{display:flex;justify-content:space-between;padding:10px 0;font-size:14px;}
+  .totals-row.big{font-size:18px;font-weight:800;border-top:1px solid var(--border);margin-top:4px;padding-top:14px;}
+
+  .setting-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:12px 0;
+  }
+  .setting-row .label{font-size:14px;font-weight:700;}
+  .setting-caption{font-size:12px;color:var(--muted);margin-top:-4px;margin-bottom:8px;line-height:1.4;}
+
+  .switch{position:relative;width:46px;height:28px;flex-shrink:0;}
+  .switch input{opacity:0;width:0;height:0;}
+  .switch .track{
+    position:absolute;inset:0;background:#D0D5DD;border-radius:28px;
+    transition:.2s;cursor:pointer;
+  }
+  .switch .thumb{
+    position:absolute;top:3px;left:3px;width:22px;height:22px;
+    background:#fff;border-radius:50%;transition:.2s;
+    box-shadow:0 1px 3px rgba(0,0,0,.3);
+  }
+  .switch input:checked + .track{background:var(--fp-blue);}
+  .switch input:checked + .track .thumb{transform:translateX(18px);}
+
+  /* Screen 2: sent confirmation */
+  .center-flow{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;}
+  .check-circle{
+    width:64px;height:64px;border-radius:50%;background:var(--green-bg);
+    display:flex;align-items:center;justify-content:center;margin-bottom:16px;
+  }
+  .check-circle svg{width:30px;height:30px;}
+
+  /* Screen 3 & 4: customer view */
+  .biz-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .biz-header .fp-logo{width:38px;height:38px;border-radius:10px;font-size:14px;}
+  .biz-header h2{font-size:15px;margin:0;}
+  .biz-header p{font-size:12px;color:var(--muted);margin:1px 0 0;}
+
+  .price-options{display:flex;gap:10px;margin:14px 0 10px;}
+  .price-card{
+    flex:1;border:1.5px solid var(--border);border-radius:14px;padding:12px 10px;
+    text-align:center;
+  }
+  .price-card.highlight{border-color:var(--green);background:var(--green-bg);}
+  .price-card .price-label{font-size:12px;font-weight:700;margin-bottom:6px;color:var(--text);}
+  .price-card .price-amount{font-size:19px;font-weight:800;}
+  .price-card .price-tag{font-size:10px;margin-top:5px;font-weight:700;}
+  .price-card.highlight .price-tag{color:var(--green);}
+  .price-card .price-tag.muted{color:var(--muted);}
+
+  .compliance-note{
+    font-size:11.5px;line-height:1.5;color:var(--muted);
+    background:#F8F9FC;border-radius:10px;padding:10px 12px;margin:6px 0 14px;
+  }
+  .compliance-note strong{color:var(--text);}
+  .link{color:var(--fp-blue);text-decoration:none;font-weight:700;}
+
+  .totals-single{margin-top:6px;}
+
+  /* Screen 4: collect payment */
+  .amount-due{font-size:34px;font-weight:800;text-align:center;margin:18px 0 4px;}
+  .amount-due-label{text-align:center;color:var(--muted);font-size:12px;margin-bottom:18px;}
+  .method-options{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+  .method-btn{
+    display:flex;justify-content:space-between;align-items:center;
+    border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;
+    background:#fff;cursor:pointer;font-size:13px;font-weight:700;color:var(--text);
+  }
+  .method-btn.active{border-color:var(--fp-blue);background:#EAF0FF;}
+  .method-btn .method-price{font-weight:800;}
+  .fee-flag{font-size:10px;color:var(--muted);font-weight:600;margin-left:6px;}
+
+  .fake-field{
+    border:1px solid var(--border);border-radius:10px;padding:11px 12px;
+    font-size:13px;color:var(--muted);margin-bottom:8px;background:#FAFBFC;
+  }
+  .fake-field-row{display:flex;gap:8px;}
+  .fake-field-row .fake-field{flex:1;}
+
+  /* Screen 5: receipt */
+  .receipt-box{width:100%;border:1px solid var(--border);border-radius:14px;padding:14px;text-align:left;margin-top:10px;}
+  .receipt-row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;}
+  .receipt-row.total{font-weight:800;font-size:15px;border-top:1px solid var(--border);margin-top:4px;padding-top:10px;}
+  .receipt-row.fee{color:var(--amber);}
+  .receipt-row.saved{color:var(--green);}
+
+  /* Screen 6: owner dashboard */
+  .stat-card{
+    border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;
+  }
+  .stat-card .stat-label{font-size:12px;color:var(--muted);font-weight:600;}
+  .stat-card .stat-value{font-size:24px;font-weight:800;margin-top:2px;}
+  .stat-card .stat-value.green{color:var(--green);}
+  .stat-card .stat-value.amber{color:var(--amber);}
+  .stat-card .stat-sub{font-size:11.5px;color:var(--muted);margin-top:4px;}
+
+  /* ---------- Right panel ---------- */
+  .panel{
+    width:340px;
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:22px;
+    flex-shrink:0;
+    position:sticky;
+    top:48px;
+  }
+  .panel h1{font-size:17px;margin:0 0 6px;}
+  .panel .sub{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:14px;}
+
+  .compliance-badge{
+    display:flex;align-items:flex-start;gap:8px;
+    background:var(--green-bg);border-radius:12px;padding:10px 12px;
+    margin-bottom:16px;
+  }
+  .compliance-badge .dot{
+    width:18px;height:18px;border-radius:50%;background:var(--green);
+    color:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:800;margin-top:1px;
+  }
+  .compliance-badge p{margin:0;font-size:12px;line-height:1.5;color:#0F4C34;}
+  .compliance-badge p strong{display:block;font-size:13px;margin-bottom:2px;}
+
+  .panel-section-label{
+    font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--muted);margin:18px 0 8px;
+  }
+
+  .step-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
+  .step-list li{
+    display:flex;align-items:center;gap:10px;
+    padding:9px 10px;border-radius:10px;cursor:pointer;
+    border:1px solid transparent;
+  }
+  .step-list li:hover{background:#F8F9FC;}
+  .step-list li.active{background:#EAF0FF;border-color:#C9DBFF;}
+  .step-list .num{
+    width:22px;height:22px;border-radius:50%;background:#F2F4F7;color:var(--muted);
+    font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .step-list li.active .num{background:var(--fp-blue);color:#fff;}
+  .step-list .step-title{font-size:13px;font-weight:600;}
+  .step-list li.active .step-title{color:var(--fp-blue-dark);font-weight:700;}
+
+  .seg{
+    display:flex;border:1px solid var(--border);border-radius:10px;overflow:hidden;
+  }
+  .seg button{
+    flex:1;padding:9px 0;border:none;background:#fff;font-size:13px;font-weight:700;
+    color:var(--muted);cursor:pointer;
+  }
+  .seg button.active{background:var(--fp-blue);color:#fff;}
+  .seg button:disabled{opacity:.4;cursor:not-allowed;}
+
+  .helper-text{font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.5;}
+  .helper-text.hint{color:var(--fp-blue-dark);font-weight:600;}
+
+  .restart-btn{
+    display:block;width:100%;margin-top:20px;padding:10px;border-radius:10px;
+    background:#F2F4F7;border:none;color:var(--text);font-weight:700;font-size:13px;cursor:pointer;
+  }
+
+  @media (max-width:820px){
+    body{flex-direction:column;align-items:center;}
+    .panel{position:static;width:380px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="notch"></div>
+  <div class="phone-screen">
+    <div class="status-bar">
+      <span id="clock">9:41</span>
+      <div class="icons">
+        <span>●●●</span><span>Wi‑Fi</span><span>🔋</span>
+      </div>
+    </div>
+
+    <div class="screens">
+
+      <!-- SCREEN 0: Job list -->
+      <div class="screen active" data-screen="0">
+        <div class="app-header">
+          <div class="fp-logo">FP</div>
+          <div class="title">Jobs — Fri, Jul 17</div>
+        </div>
+        <div class="screen-body">
+          <div class="card job-card">
+            <div class="row">
+              <div>
+                <h3>Water Heater Replacement</h3>
+                <p class="muted">Sarah Mitchell</p>
+                <p class="muted small">214 Ridgeline Dr, Denton, TX</p>
+              </div>
+              <span class="pill green">Completed</span>
+            </div>
+          </div>
+          <div class="card job-card" style="opacity:.55">
+            <div class="row">
+              <div>
+                <h3>AC Tune-Up</h3>
+                <p class="muted">Marcus Lee</p>
+                <p class="muted small">Tomorrow, 9:00 AM</p>
+              </div>
+              <span class="pill blue">Scheduled</span>
+            </div>
+          </div>
+          <div style="margin-top:20px;">
+            <button class="btn-primary" onclick="goTo(1)">Create Invoice</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN 1: Invoice builder -->
+      <div class="screen" data-screen="1">
+        <div class="app-header">
+          <button class="back-btn" onclick="goTo(0)">‹</button>
+          <div class="title">New Invoice</div>
+        </div>
+        <div class="screen-body">
+          <p class="small muted" style="margin-top:0;">Customer</p>
+          <p style="margin:2px 0 14px;font-weight:700;">Sarah Mitchell</p>
+
+          <div class="card">
+            <div class="line-item"><span>Water Heater Unit</span><span>$850.00</span></div>
+            <div class="line-item"><span>Labor (2 hrs)</span><span>$150.00</span></div>
+            <div class="totals-row big"><span>Subtotal</span><span>$1,000.00</span></div>
+          </div>
+
+          <div class="card">
+            <div class="setting-row">
+              <span class="label">Enable Dual Pricing</span>
+              <label class="switch">
+                <input type="checkbox" id="dualToggleBuilder">
+                <span class="track"><span class="thumb"></span></span>
+              </label>
+            </div>
+            <p class="setting-caption" id="builderCaption">
+              Customers pay one price, no matter how they pay. Ace Plumbing absorbs the real card cost — about 3% + $0.25 per transaction — on every card payment.
+            </p>
+          </div>
+
+          <button class="btn-primary" onclick="goTo(2)">Save &amp; Send Invoice</button>
+        </div>
+      </div>
+
+      <!-- SCREEN 2: Sent confirmation -->
+      <div class="screen" data-screen="2">
+        <div class="app-header">
+          <button class="back-btn" onclick="goTo(1)">‹</button>
+          <div class="title">Invoice</div>
+        </div>
+        <div class="center-flow">
+          <div class="check-circle">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 12.5L9 17.5L20 6.5" stroke="#0F7A57" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h2 style="margin:0 0 8px;">Invoice #1092 Sent</h2>
+          <p class="muted small" style="max-width:260px;line-height:1.5;">
+            Sarah Mitchell will get a text and email with a secure link to view and pay this invoice.
+          </p>
+          <div style="width:100%;margin-top:28px;">
+            <button class="btn-primary" onclick="goTo(3)">View Customer's View</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN 3: Customer invoice view -->
+      <div class="screen" data-screen="3">
+        <div class="app-header">
+          <button class="back-btn" onclick="goTo(2)">‹</button>
+          <div class="title">Invoice #1092</div>
+        </div>
+        <div class="screen-body">
+          <div class="biz-header">
+            <div class="fp-logo">AP</div>
+            <div>
+              <h2>Ace Plumbing &amp; HVAC</h2>
+              <p>Invoice #1092 · Due Jul 24, 2026</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="line-item"><span>Water Heater Unit</span><span>$850.00</span></div>
+            <div class="line-item"><span>Labor (2 hrs)</span><span>$150.00</span></div>
+            <div class="totals-row"><span class="muted">Subtotal</span><span>$1,000.00</span></div>
+          </div>
+
+          <!-- Single price (no dual pricing) -->
+          <div id="totalsSingle" class="card totals-single">
+            <div class="totals-row big"><span>Total Due</span><span>$1,000.00</span></div>
+            <button class="btn-primary" onclick="goTo(4)">Pay Now</button>
+          </div>
+
+          <!-- Dual price -->
+          <div id="totalsDual" class="card" style="display:none;">
+            <p class="small muted" style="margin:0 0 2px;font-weight:700;">Choose how you'd like to pay</p>
+            <div class="price-options">
+              <div class="price-card highlight">
+                <div class="price-label">Cash / Bank Transfer</div>
+                <div class="price-amount">$1,000.00</div>
+                <div class="price-tag">Lowest price</div>
+              </div>
+              <div class="price-card">
+                <div class="price-label">Credit / Debit Card</div>
+                <div class="price-amount">$1,040.00</div>
+                <div class="price-tag muted">+4% card price</div>
+              </div>
+            </div>
+            <p class="compliance-note">
+              <strong>What's dual pricing?</strong>
+              This invoice shows a separate cash price and card price so the cost of accepting cards is covered up front — clearly disclosed, not hidden. Dual pricing is legal in all 50 states.
+            </p>
+            <button class="btn-primary" onclick="goTo(4)">Pay Now</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN 4: Collect payment -->
+      <div class="screen" data-screen="4">
+        <div class="app-header">
+          <button class="back-btn" onclick="goTo(3)">‹</button>
+          <div class="title">Pay Ace Plumbing &amp; HVAC</div>
+        </div>
+        <div class="screen-body">
+          <div class="amount-due" id="amountDue">$1,000.00</div>
+          <div class="amount-due-label" id="amountDueLabel">Total amount due</div>
+
+          <div id="methodOptions" class="method-options" style="display:none;">
+            <button class="method-btn active" data-method="ach" onclick="setMethod('ach')">
+              <span>Bank Transfer (ACH)</span>
+              <span class="method-price">$1,000.00</span>
+            </button>
+            <button class="method-btn" data-method="card" onclick="setMethod('card')">
+              <span>Credit / Debit Card <span class="fee-flag">+4%</span></span>
+              <span class="method-price">$1,040.00</span>
+            </button>
+          </div>
+
+          <p class="small muted" style="margin:10px 0 6px;font-weight:700;">Card information</p>
+          <div class="fake-field">4242 4242 4242 4242</div>
+          <div class="fake-field-row">
+            <div class="fake-field">MM / YY</div>
+            <div class="fake-field">CVC</div>
+          </div>
+
+          <div style="margin-top:16px;">
+            <button class="btn-primary" id="payBtn" onclick="goTo(5)">Pay $1,000.00</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN 5: Receipt -->
+      <div class="screen" data-screen="5">
+        <div class="app-header">
+          <button class="back-btn" onclick="goTo(4)">‹</button>
+          <div class="title">Receipt</div>
+        </div>
+        <div class="center-flow" style="justify-content:flex-start;padding-top:36px;">
+          <div class="check-circle">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 12.5L9 17.5L20 6.5" stroke="#0F7A57" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h2 style="margin:0 0 4px;">Payment Successful</h2>
+          <p class="muted small" id="receiptSub">Sarah Mitchell paid $1,000.00 via Bank Transfer.</p>
+
+          <div class="receipt-box">
+            <div class="receipt-row"><span class="muted">Subtotal</span><span>$1,000.00</span></div>
+            <div class="receipt-row fee" id="receiptFeeRow" style="display:none;"><span>Card price adjustment</span><span>+$40.00</span></div>
+            <div class="receipt-row saved" id="receiptSavedRow" style="display:none;"><span>Real cost absorbed by business (3% + $0.25)</span><span>−$30.25</span></div>
+            <div class="receipt-row total"><span>Total Charged</span><span id="receiptTotal">$1,000.00</span></div>
+          </div>
+          <p class="small muted" style="margin-top:14px;">A copy of this receipt was emailed to the customer.</p>
+          <div style="width:100%;margin-top:18px;">
+            <button class="btn-primary" onclick="goTo(6)">See the Business Impact</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN 6: Owner recap -->
+      <div class="screen" data-screen="6">
+        <div class="app-header">
+          <button class="back-btn" onclick="goTo(5)">‹</button>
+          <div class="title">This Invoice</div>
+        </div>
+        <div class="screen-body">
+          <div class="stat-card">
+            <div class="stat-label">Real cost to accept this card</div>
+            <div class="stat-value" id="ownerFeeValue">$0.00</div>
+            <div class="stat-sub" id="ownerFeeSub">No processing cost on this invoice — paid by bank transfer.</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Who pays it</div>
+            <div class="stat-value" id="ownerWhoValue" style="font-size:16px;">—</div>
+            <div class="stat-sub" id="ownerWhoSub"></div>
+          </div>
+          <div class="stat-card" style="background:#F8F9FC;border-color:#E4E7EC;">
+            <div class="stat-label">Estimated Monthly Impact</div>
+            <div class="stat-sub" style="margin-top:2px;">Based on $30,000 in monthly card volume across ~120 card transactions.</div>
+            <div class="receipt-row" style="padding:10px 0 4px;"><span class="muted">Without dual pricing — absorbed</span><span style="font-weight:800;color:var(--amber);">~$930</span></div>
+            <div class="receipt-row" style="padding:4px 0 10px;border-bottom:1px solid var(--border);"><span class="muted">With dual pricing — recovered</span><span style="font-weight:800;color:var(--green);">~$1,200</span></div>
+            <div class="stat-sub" style="margin-top:8px;">Illustrative only — actual results vary by processor and card mix.</div>
+          </div>
+          <p class="compliance-note" style="margin-top:4px;">
+            FieldPulse calculates the card price, discloses both prices on every invoice and receipt, and keeps your setup aligned with card network rules — dual pricing is legal in all 50 states.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="panel">
+  <h1>Card Fee Recovery Demo</h1>
+  <p class="sub">Tap through the phone, or jump to any step. Toggle dual pricing to see the invoice change instantly.</p>
+
+  <div class="compliance-badge">
+    <div class="dot">✓</div>
+    <p><strong>Dual pricing is legal in all 50 states.</strong>
+    It shows a separate cash and card price — different from card surcharging, which is restricted in a few states (e.g. CT, MA). Always disclose both prices clearly.</p>
+  </div>
+
+  <div class="panel-section-label">Steps</div>
+  <ul class="step-list" id="stepList">
+    <li data-step="0"><span class="num">1</span><span class="step-title">Job Completed</span></li>
+    <li data-step="1"><span class="num">2</span><span class="step-title">Build the Invoice</span></li>
+    <li data-step="2"><span class="num">3</span><span class="step-title">Invoice Sent</span></li>
+    <li data-step="3"><span class="num">4</span><span class="step-title">Customer Opens Invoice</span></li>
+    <li data-step="4"><span class="num">5</span><span class="step-title">Customer Pays</span></li>
+    <li data-step="5"><span class="num">6</span><span class="step-title">Receipt</span></li>
+    <li data-step="6"><span class="num">7</span><span class="step-title">Business Impact</span></li>
+  </ul>
+
+  <div class="panel-section-label">Dual Pricing</div>
+  <div class="seg" id="dualSeg">
+    <button data-val="off">Without</button>
+    <button data-val="on">With</button>
+  </div>
+  <p class="helper-text" id="dualHelper">Showing the invoice as one flat price — like most FieldPulse accounts today.</p>
+
+  <div class="panel-section-label">Customer Pays With</div>
+  <div class="seg" id="methodSeg">
+    <button data-val="ach">Cash / ACH</button>
+    <button data-val="card">Card</button>
+  </div>
+  <p class="helper-text">Only changes the price when dual pricing is on.</p>
+
+  <button class="restart-btn" onclick="restartDemo()">Restart Demo</button>
+</div>
+
+<script>
+  const state = { step: 0, dual: false, method: 'ach' };
+  const totalSubtotal = 1000.00;
+  const cardRate = 0.04;
+  const cardPrice = Math.round(totalSubtotal * (1 + cardRate) * 100) / 100; // 1040.00
+  const feeAmount = Math.round((cardPrice - totalSubtotal) * 100) / 100; // 40.00
+
+  // Real-world processing cost the business actually pays a processor —
+  // separate from the 4% dual pricing rate charged to the customer.
+  const standardRate = 0.03;
+  const standardFlatFee = 0.25;
+  const standardFeeAmount = Math.round((totalSubtotal * standardRate + standardFlatFee) * 100) / 100; // 30.25
+
+  function fmt(n){
+    return '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  function goTo(step){
+    state.step = step;
+    render();
+  }
+
+  function setMethod(m){
+    state.method = m;
+    render();
+  }
+
+  function setDual(on){
+    state.dual = on;
+    document.getElementById('dualToggleBuilder').checked = on;
+    render();
+  }
+
+  function restartDemo(){
+    state.step = 0;
+    state.dual = false;
+    state.method = 'ach';
+    render();
+  }
+
+  document.getElementById('dualToggleBuilder').addEventListener('change', function(e){
+    setDual(e.target.checked);
+  });
+
+  document.querySelectorAll('#dualSeg button').forEach(btn => {
+    btn.addEventListener('click', () => setDual(btn.dataset.val === 'on'));
+  });
+
+  document.querySelectorAll('#methodSeg button').forEach(btn => {
+    btn.addEventListener('click', () => setMethod(btn.dataset.val));
+  });
+
+  document.querySelectorAll('#stepList li').forEach(li => {
+    li.addEventListener('click', () => goTo(parseInt(li.dataset.step, 10)));
+  });
+
+  document.querySelectorAll('#methodOptions .method-btn').forEach(btn => {
+    // handled via inline onclick, kept for safety if markup changes
+  });
+
+  function render(){
+    // screens
+    document.querySelectorAll('.screen').forEach(s => {
+      s.classList.toggle('active', parseInt(s.dataset.screen,10) === state.step);
+    });
+
+    // step list highlight
+    document.querySelectorAll('#stepList li').forEach(li => {
+      li.classList.toggle('active', parseInt(li.dataset.step,10) === state.step);
+    });
+
+    // dual pricing segmented control
+    document.querySelectorAll('#dualSeg button').forEach(btn => {
+      btn.classList.toggle('active', (btn.dataset.val === 'on') === state.dual);
+    });
+    document.getElementById('dualHelper').textContent = state.dual
+      ? 'Showing a cash price and a card price side by side — the card price covers the processing fee.'
+      : 'Showing the invoice as one flat price — like most FieldPulse accounts today.';
+
+    // method segmented control
+    document.querySelectorAll('#methodSeg button').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.val === state.method);
+    });
+
+    // builder screen
+    document.getElementById('dualToggleBuilder').checked = state.dual;
+    document.getElementById('builderCaption').textContent = state.dual
+      ? 'Shows customers a cash price and a card price on every invoice, so card processing costs are covered — disclosed clearly, legal in all 50 states.'
+      : 'Customers pay one price, no matter how they pay. Ace Plumbing absorbs the real card cost — about 3% + $0.25 per transaction — on every card payment.';
+
+    // customer invoice view (screen 3)
+    document.getElementById('totalsSingle').style.display = state.dual ? 'none' : 'block';
+    document.getElementById('totalsDual').style.display = state.dual ? 'block' : 'none';
+
+    // payment screen (screen 4)
+    const amount = state.dual && state.method === 'card' ? cardPrice : totalSubtotal;
+    document.getElementById('amountDue').textContent = fmt(amount);
+    document.getElementById('amountDueLabel').textContent = state.dual
+      ? (state.method === 'card' ? 'Card price selected' : 'Cash / ACH price selected')
+      : 'Total amount due';
+    document.getElementById('methodOptions').style.display = state.dual ? 'flex' : 'none';
+    document.querySelectorAll('#methodOptions .method-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.method === state.method);
+    });
+    document.getElementById('payBtn').textContent = 'Pay ' + fmt(amount);
+
+    // receipt screen (screen 5)
+    const methodLabel = state.method === 'card' ? 'Credit/Debit Card' : 'Bank Transfer';
+    document.getElementById('receiptSub').textContent = 'Sarah Mitchell paid ' + fmt(amount) + ' via ' + methodLabel + '.';
+    const showFeeRow = state.dual && state.method === 'card';
+    const showSavedRow = !state.dual && state.method === 'card';
+    document.getElementById('receiptFeeRow').style.display = showFeeRow ? 'flex' : 'none';
+    document.getElementById('receiptSavedRow').style.display = showSavedRow ? 'flex' : 'none';
+    document.getElementById('receiptTotal').textContent = fmt(amount);
+
+    // owner impact screen (screen 6)
+    // "Real cost" is what the processor actually charges the business —
+    // 3% + $0.25/transaction — regardless of whether dual pricing is on.
+    // It is intentionally separate from the 4% dual pricing rate charged to the customer.
+    const realCost = state.method === 'card' ? standardFeeAmount : 0;
+    document.getElementById('ownerFeeValue').textContent = fmt(realCost);
+    if (state.method !== 'card') {
+      document.getElementById('ownerFeeSub').textContent = 'No processing cost on this invoice — paid by bank transfer.';
+      document.getElementById('ownerWhoValue').textContent = 'N/A';
+      document.getElementById('ownerWhoSub').textContent = 'Bank transfers have no card network fee to cover.';
+      document.getElementById('ownerFeeValue').className = 'stat-value';
+    } else if (state.dual) {
+      document.getElementById('ownerFeeSub').textContent = 'What Ace Plumbing pays its processor to accept this card (3% + $0.25/transaction).';
+      document.getElementById('ownerWhoValue').textContent = 'Customer, via the card price';
+      document.getElementById('ownerWhoSub').textContent = 'The $' + feeAmount.toFixed(2) + ' card price covers the $' + standardFeeAmount.toFixed(2) + ' real cost, with $' + (feeAmount - standardFeeAmount).toFixed(2) + ' left over.';
+      document.getElementById('ownerFeeValue').className = 'stat-value green';
+    } else {
+      document.getElementById('ownerFeeSub').textContent = 'What Ace Plumbing pays its processor to accept this card (3% + $0.25/transaction).';
+      document.getElementById('ownerWhoValue').textContent = 'Ace Plumbing (absorbed)';
+      document.getElementById('ownerWhoSub').textContent = 'Without dual pricing, this comes straight out of the job\'s $1,000 margin — not shown anywhere on the invoice.';
+      document.getElementById('ownerFeeValue').className = 'stat-value amber';
+    }
+  }
+
+  render();
+
+  // simple live clock in status bar (cosmetic)
+  function tick(){
+    const d = new Date();
+    let h = d.getHours() % 12; if (h === 0) h = 12;
+    const m = d.getMinutes().toString().padStart(2,'0');
+    document.getElementById('clock').textContent = h + ':' + m;
+  }
+  tick();
+  setInterval(tick, 30000);
+</script>
+</body>
+</html>

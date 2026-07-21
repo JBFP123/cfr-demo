@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FieldPulse Desktop — Card Fee Recovery (CFR) Demo</title>
+<style>
+  :root{
+    --fp-blue:#155EEF;
+    --fp-blue-dark:#0B3FAE;
+    --navy:#12123D;
+    --bg:#F3F5FA;
+    --card:#FFFFFF;
+    --border:#E4E7EC;
+    --text:#101323;
+    --muted:#6B7280;
+    --green:#0F7A57;
+    --green-bg:#E6F6EF;
+    --amber-bg:#FFF4E5;
+    --amber:#B54708;
+    --blue-bg:#EAF1FF;
+    --blue-text:#1C64F2;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    gap:28px;
+    padding:36px 24px;
+  }
+
+  /* ---------- App shell ---------- */
+  .app-shell{
+    width:1080px;
+    max-width:100%;
+    background:#fff;
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 30px 60px rgba(16,19,35,.14), 0 4px 14px rgba(16,19,35,.08);
+    flex-shrink:0;
+    display:flex;
+  }
+
+  /* persistent left sidebar */
+  .sidebar{
+    width:180px;flex-shrink:0;background:#FAFBFC;border-right:1px solid var(--border);
+    padding:14px 0;
+  }
+  .sidebar .profile{display:flex;align-items:center;gap:8px;padding:6px 14px 14px;border-bottom:1px solid var(--border);margin-bottom:10px;}
+  .sidebar .profile .circle{width:28px;height:28px;border-radius:50%;background:var(--fp-blue);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+  .sidebar .profile span{font-size:13px;font-weight:700;}
+  .sidebar nav div{padding:8px 14px;font-size:12.5px;color:var(--muted);font-weight:600;cursor:default;}
+  .sidebar nav div.section{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#9AA1B1;font-weight:800;margin-top:10px;}
+  .sidebar nav div.current{color:var(--fp-blue);background:var(--blue-bg);border-radius:8px;margin:0 8px;font-weight:700;}
+  .sidebar nav div.sub{padding-left:24px;}
+
+  .main{flex:1;min-width:0;position:relative;}
+  .page{display:none;}
+  .page.active{display:block;}
+
+  /* headers */
+  .header-light{
+    display:flex;align-items:center;gap:10px;
+    padding:16px 22px;border-bottom:1px solid var(--border);
+  }
+  .header-light h1{font-size:18px;margin:0;flex:1;}
+  .header-navy{
+    display:flex;align-items:center;gap:12px;
+    background:var(--navy);color:#fff;
+    padding:14px 22px;
+  }
+  .header-navy h1{font-size:16px;font-weight:700;margin:0;flex:1;color:#fff;}
+  .icon-btn{
+    width:30px;height:30px;border-radius:8px;background:transparent;border:none;
+    color:inherit;display:flex;align-items:center;justify-content:center;cursor:pointer;
+    font-size:14px;flex-shrink:0;
+  }
+  .header-light .icon-btn{color:var(--muted);}
+  .header-navy .icon-btn{color:#C9CCE6;}
+  .header-navy .toolbar{display:flex;align-items:center;gap:4px;margin-left:auto;}
+  .avatar-chip{
+    display:flex;align-items:center;gap:8px;margin-left:10px;padding:4px 8px 4px 4px;
+    border-radius:20px;background:rgba(255,255,255,.06);cursor:pointer;
+  }
+  .avatar-chip .circle{
+    width:24px;height:24px;border-radius:50%;background:#12A150;color:#fff;
+    font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;
+  }
+  .avatar-chip span{font-size:13px;font-weight:600;color:#fff;}
+
+  /* tabs */
+  .tabs{display:flex;gap:24px;padding:0 22px;border-bottom:1px solid var(--border);background:#fff;overflow-x:auto;}
+  .tabs .tab{
+    padding:13px 2px;font-size:13px;font-weight:600;color:var(--muted);
+    border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;
+  }
+  .tabs .tab.active{color:var(--fp-blue);border-bottom-color:var(--fp-blue);}
+
+  /* toolbar row above table */
+  .toolbar-row{display:flex;align-items:center;gap:10px;padding:14px 22px;flex-wrap:wrap;}
+  .toolbar-row.right{justify-content:flex-end;}
+  .search-input{flex:1;max-width:340px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--muted);background:#FAFBFC;}
+  .btn-outline{padding:9px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;font-size:13px;font-weight:700;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:6px;}
+  .btn-green{padding:9px 16px;border:none;border-radius:8px;background:#12A150;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;}
+  .select-chip{padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);background:#fff;font-weight:600;}
+  .icon-square{width:34px;height:34px;border:1px solid var(--border);border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer;font-size:14px;flex-shrink:0;}
+
+  /* table */
+  .table-wrap{overflow-x:auto;padding:0 0 6px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{text-align:left;padding:10px 14px;font-size:12.5px;font-weight:700;color:var(--text);border-bottom:1px solid var(--border);white-space:nowrap;background:#fff;}
+  tbody td{padding:12px 14px;border-bottom:1px solid var(--border);color:var(--text);white-space:nowrap;}
+  tbody tr.demo-row{background:#F5F8FF;}
+  tbody tr.demo-row td:first-child{box-shadow:inset 3px 0 0 var(--fp-blue);}
+  .muted-cell{color:var(--muted);}
+
+  .pill{display:inline-block;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;}
+  .pill.blue{background:var(--blue-bg);color:var(--blue-text);}
+  .pill.green{background:var(--green-bg);color:var(--green);}
+  .pill.amber{background:var(--amber-bg);color:var(--amber);}
+
+  .brand{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;padding:3px 7px;border-radius:5px;color:#fff;}
+  .brand.mc{background:#EB6446;}
+  .brand.visa{background:#1A1F71;}
+  .brand.ach{background:#F2F4F7;color:var(--muted);border:1px solid var(--border);}
+
+  .footer-row{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-top:1px solid var(--border);font-size:13px;color:var(--muted);flex-wrap:wrap;gap:8px;}
+  .footer-row .pager{display:flex;align-items:center;gap:10px;}
+  .footer-row .pager button{border:none;background:none;color:var(--muted);cursor:pointer;font-size:14px;}
+
+  .demo-cta{padding:16px 22px;border-top:1px solid var(--border);background:#FAFBFC;display:flex;justify-content:flex-end;align-items:center;gap:10px;flex-wrap:wrap;}
+
+  .btn-primary{padding:11px 20px;border-radius:9px;background:var(--fp-blue);color:#fff;border:none;font-size:14px;font-weight:700;cursor:pointer;}
+  .btn-secondary{padding:11px 20px;border-radius:9px;background:#fff;color:var(--text);border:1px solid var(--border);font-size:14px;font-weight:700;cursor:pointer;}
+
+  /* ---- Invoice Record page ---- */
+  .record-toolbar{display:flex;align-items:center;gap:10px;padding:12px 22px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .record-toolbar .back{font-size:13px;color:var(--fp-blue);font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px;}
+  .device-toggle{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-left:auto;}
+  .device-toggle button{padding:7px 12px;border:none;background:#fff;font-size:12.5px;font-weight:700;color:var(--muted);cursor:default;border-right:1px solid var(--border);}
+  .device-toggle button:last-child{border-right:none;}
+  .device-toggle button.active{background:#F2F4F7;color:var(--text);}
+
+  .record-body{display:flex;gap:0;}
+  .record-preview{flex:1;padding:20px 22px;border-right:1px solid var(--border);min-width:0;}
+  .record-settings{width:300px;flex-shrink:0;padding:18px;background:#FAFBFC;}
+  .record-settings h3{font-size:13px;margin:0 0 12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+
+  .check-row{display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:8px;font-size:13px;color:var(--text);}
+  .check-row.interactive{cursor:pointer;background:#EAF0FF;border:1.5px solid #C9DBFF;padding:10px;margin-bottom:10px;}
+  .check-row .box{
+    width:18px;height:18px;border-radius:4px;border:1.5px solid #C7CCDA;background:#fff;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;color:#fff;font-weight:800;
+  }
+  .check-row .box.checked{background:var(--green);border-color:var(--green);}
+  .check-row.dim{opacity:.7;}
+  .check-row .row-label{flex:1;}
+  .check-row.interactive .row-label{font-weight:700;}
+
+  /* invoice preview */
+  .inv-doc{border:1px solid var(--border);border-radius:10px;padding:22px;}
+  .inv-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #E7B65C;padding-bottom:14px;margin-bottom:14px;}
+  .inv-brand{display:flex;gap:10px;align-items:flex-start;}
+  .inv-brand .logo{width:38px;height:38px;border-radius:8px;background:var(--fp-blue);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+  .inv-brand .biz-name{font-size:15px;font-weight:800;}
+  .inv-brand .biz-meta{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:2px;}
+  .inv-num{font-size:13px;font-weight:700;text-align:right;}
+  .inv-num .badge{display:inline-block;margin-top:4px;border:1px solid var(--fp-blue);color:var(--fp-blue);border-radius:6px;padding:2px 8px;font-size:11px;font-style:italic;}
+
+  .inv-meta-row{display:flex;justify-content:space-between;margin-bottom:14px;font-size:12.5px;}
+  .inv-meta-row .to div{line-height:1.5;color:var(--text);}
+  .inv-meta-row .dates{text-align:right;line-height:1.6;color:var(--text);}
+  .inv-meta-row .dates b{font-weight:700;}
+
+  .inv-job-title{font-weight:700;font-size:13px;margin-bottom:8px;}
+
+  .inv-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:14px;}
+  .inv-table th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);font-weight:700;color:var(--text);}
+  .inv-table td{padding:7px 8px;border-bottom:1px solid #F0F1F5;}
+  .inv-table td.num, .inv-table th.num{text-align:right;}
+
+  .inv-bottom{display:flex;justify-content:space-between;gap:20px;}
+  .inv-thanks{font-size:12.5px;color:var(--muted);max-width:220px;}
+  .inv-totals{width:230px;flex-shrink:0;font-size:13px;}
+  .inv-totals .r{display:flex;justify-content:space-between;padding:4px 0;}
+  .inv-totals .r.strong{font-weight:800;}
+  .inv-totals .split-box{border:1.5px solid var(--fp-blue);border-radius:8px;padding:8px 10px;margin:8px 0;background:var(--blue-bg);}
+  .inv-totals .split-box .r{font-weight:800;font-size:13px;}
+  .inv-totals .split-box .r.card{color:var(--text);}
+  .inv-totals .split-box .r.ach{color:var(--green);}
+
+  /* Take Payment modal */
+  .tp-backdrop{position:relative;min-height:520px;background:#F5F6FA;}
+  .tp-ghost{position:absolute;inset:0;padding:26px;opacity:.35;filter:blur(.3px);}
+  .tp-ghost .ghost-line{height:10px;background:#D8DCE6;border-radius:4px;margin-bottom:10px;}
+  .tp-modal-wrap{position:absolute;top:26px;right:26px;display:flex;box-shadow:0 20px 50px rgba(16,19,35,.25);border-radius:12px;overflow:hidden;background:#fff;width:560px;}
+  .tp-subnav{width:150px;background:#FAFBFC;border-right:1px solid var(--border);padding:14px 0;flex-shrink:0;}
+  .tp-subnav div{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:12.5px;font-weight:600;color:var(--muted);}
+  .tp-subnav div.active{color:var(--fp-blue);background:var(--blue-bg);font-weight:700;}
+  .tp-panel{flex:1;padding:18px 20px;}
+  .tp-panel-head{display:flex;align-items:center;margin-bottom:16px;}
+  .tp-panel-head h3{font-size:14px;margin:0;flex:1;}
+  .tp-panel-head .x{cursor:pointer;color:var(--muted);font-size:15px;}
+  .tp-field-label{font-size:12.5px;font-weight:700;margin-bottom:6px;}
+  .tp-amount{border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:15px;font-weight:700;margin-bottom:14px;background:#fff;}
+  .tp-cfr-row{
+    display:flex;align-items:center;gap:8px;border:1.5px solid #C9DBFF;background:var(--blue-bg);
+    border-radius:8px;padding:9px 12px;margin-bottom:16px;cursor:pointer;width:fit-content;
+  }
+  .tp-cfr-row .box{width:17px;height:17px;border-radius:4px;border:1.5px solid #9CB8FF;background:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:800;}
+  .tp-cfr-row .box.checked{background:var(--green);border-color:var(--green);}
+  .tp-cfr-row span.lbl{font-size:13px;font-weight:700;}
+  .method-toggle{display:flex;gap:10px;margin-bottom:16px;}
+  .method-toggle button{flex:1;padding:11px;border:1.5px solid var(--border);border-radius:9px;background:#fff;font-size:13px;font-weight:700;color:var(--text);cursor:pointer;}
+  .method-toggle button.active{border-color:var(--fp-blue);background:var(--blue-bg);color:var(--fp-blue-dark);}
+  .card-brands{display:flex;gap:6px;margin-bottom:8px;}
+  .card-brands span{font-size:10px;font-weight:800;padding:3px 6px;border-radius:4px;border:1px solid var(--border);color:var(--muted);}
+  .fake-field{border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;color:#B7BCC8;margin-bottom:8px;background:#fff;}
+  .fake-field-row{display:flex;gap:8px;}
+  .fake-field-row .fake-field{flex:1;position:relative;}
+  .fake-notes{border:1px solid var(--border);border-radius:8px;height:60px;background:#fff;margin-top:4px;}
+
+  /* impact page */
+  .impact-body{padding:22px;}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+  .stat-card{border:1px solid var(--border);border-radius:12px;padding:16px;}
+  .stat-card .stat-label{font-size:12.5px;color:var(--muted);font-weight:600;}
+  .stat-card .stat-value{font-size:26px;font-weight:800;margin-top:4px;}
+  .stat-card .stat-value.green{color:var(--green);}
+  .stat-card .stat-value.amber{color:var(--amber);}
+  .stat-card .stat-sub{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5;}
+  .impact-row{display:flex;justify-content:space-between;padding:8px 0;font-size:13.5px;}
+  .compliance-note{font-size:12px;line-height:1.55;color:var(--muted);background:#F8F9FC;border-radius:10px;padding:12px 14px;margin-top:12px;}
+  .compliance-note strong{color:var(--text);}
+  .net-line{padding:14px 22px;border-top:1px solid var(--border);font-size:14px;font-weight:700;display:flex;justify-content:space-between;background:#FAFBFC;}
+
+  /* ---------- Right panel ---------- */
+  .panel{width:320px;background:#fff;border:1px solid var(--border);border-radius:18px;padding:22px;flex-shrink:0;position:sticky;top:36px;}
+  .panel h1{font-size:17px;margin:0 0 6px;}
+  .panel .sub{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:14px;}
+  .compliance-badge{display:flex;align-items:flex-start;gap:8px;background:var(--green-bg);border-radius:12px;padding:10px 12px;margin-bottom:16px;}
+  .compliance-badge .dot{width:18px;height:18px;border-radius:50%;background:var(--green);color:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;margin-top:1px;}
+  .compliance-badge p{margin:0;font-size:12px;line-height:1.5;color:#0F4C34;}
+  .compliance-badge p strong{display:block;font-size:13px;margin-bottom:2px;}
+  .panel-section-label{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:18px 0 8px;}
+  .step-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
+  .step-list li{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;cursor:pointer;border:1px solid transparent;}
+  .step-list li:hover{background:#F8F9FC;}
+  .step-list li.active{background:#EAF0FF;border-color:#C9DBFF;}
+  .step-list .num{width:22px;height:22px;border-radius:50%;background:#F2F4F7;color:var(--muted);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .step-list li.active .num{background:var(--fp-blue);color:#fff;}
+  .step-list .step-title{font-size:13px;font-weight:600;}
+  .step-list li.active .step-title{color:var(--fp-blue-dark);font-weight:700;}
+  .seg{display:flex;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+  .seg button{flex:1;padding:9px 0;border:none;background:#fff;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;}
+  .seg button.active{background:var(--fp-blue);color:#fff;}
+  .helper-text{font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.5;}
+  .restart-btn{display:block;width:100%;margin-top:20px;padding:10px;border-radius:10px;background:#F2F4F7;border:none;color:var(--text);font-weight:700;font-size:13px;cursor:pointer;}
+
+  @media (max-width:1440px){
+    body{flex-direction:column;align-items:center;}
+    .panel{position:static;width:1080px;max-width:100%;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <div class="sidebar">
+    <div class="profile"><span class="circle">RH</span><span>Reina Howard</span></div>
+    <nav>
+      <div>📊 Pulse Dashboard</div>
+      <div>👤 Customers</div>
+      <div>📅 Schedule</div>
+      <div class="section">Sales</div>
+      <div class="sub">Estimates</div>
+      <div class="sub current">Invoices</div>
+      <div class="sub">Purchase Orders</div>
+      <div class="section">Management</div>
+      <div class="sub">Payments</div>
+    </nav>
+  </div>
+
+  <div class="main">
+
+    <!-- PAGE 0: Invoices list -->
+    <div class="page active" data-page="invoices">
+      <div class="header-light">
+        <h1>Invoices</h1>
+        <button class="icon-btn">⚙</button>
+      </div>
+      <div class="tabs">
+        <div class="tab active">Invoices</div>
+        <div class="tab">By Status</div>
+        <div class="tab">Payments</div>
+        <div class="tab">Item List</div>
+        <div class="tab">Inventory</div>
+        <div class="tab">Templates</div>
+      </div>
+      <div class="toolbar-row">
+        <input class="search-input" placeholder="Search for invoice" disabled>
+        <button class="btn-outline">▽ Show Filters</button>
+        <div class="icon-square">☰</div>
+        <div style="flex:1"></div>
+        <button class="btn-green">+ Create Invoice</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Number</th><th>Status</th><th>Title</th><th>Team Member</th><th>Customer</th>
+              <th>Work Order</th><th>Invoiced Date</th><th>Due Date</th><th>Amount</th><th>Amount Due</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>3439</td><td><span class="pill green">Paid</span></td><td class="muted-cell">Robin Ervin - …</td>
+              <td>Reina Howard</td><td>Robin Ervin</td><td class="muted-cell">AC not cooling</td>
+              <td>Jul 17, 26</td><td>Jul 18, 26</td><td>$3,744.40</td><td>$0.00</td>
+            </tr>
+            <tr class="demo-row">
+              <td>1092</td><td><span class="pill blue">Sent</span></td><td>Sarah Mitchell – Water Heater Replacement</td>
+              <td>Reina Howard</td><td>Sarah Mitchell</td><td class="muted-cell">Water Heater Replacement</td>
+              <td>Jul 17, 26</td><td>Jul 24, 26</td><td id="invoicesAmount">$1,082.50</td>
+              <td>
+                <span id="invoicesAmountDue">$1,082.50</span>
+                <span id="invoiceCfrBadge" class="pill blue" style="display:none;margin-left:6px;">CFR</span>
+              </td>
+            </tr>
+            <tr>
+              <td>3437</td><td><span class="pill blue">Sent</span></td><td class="muted-cell">Kathy Shafer …</td>
+              <td>Susie Davis</td><td>Kathy Shafer</td><td class="muted-cell">WASHER VALVE…</td>
+              <td>Jul 16, 26</td><td>Jul 17, 26</td><td>$240.63</td><td>$240.63</td>
+            </tr>
+            <tr>
+              <td>3436</td><td><span class="pill blue">Sent</span></td><td class="muted-cell">Judy Meyer</td>
+              <td>Susie Davis</td><td>Judy Meyer</td><td class="muted-cell">Install faucet</td>
+              <td>Jul 17, 26</td><td>—</td><td>$119.41</td><td>$119.41</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="footer-row">
+        <span>1 to 4 of more</span>
+        <div class="pager"><button>|«</button><button>‹</button><span>Page 1 of more</span><button>›</button><button>»|</button></div>
+        <span class="select-chip">15</span>
+      </div>
+      <div class="demo-cta">
+        <span class="helper-text" style="margin:0;">Demo invoice highlighted above.</span>
+        <button class="btn-primary" onclick="goTo(1)">Open Invoice #1092</button>
+      </div>
+    </div>
+
+    <!-- PAGE 1: Invoice Record (settings + live preview) -->
+    <div class="page" data-page="record">
+      <div class="header-navy">
+        <button class="icon-btn" onclick="goTo(0)">‹</button>
+        <h1>Invoice Record</h1>
+        <button class="icon-btn">⚙</button>
+      </div>
+      <div class="tabs">
+        <div class="tab active">Info</div>
+        <div class="tab">Cost Basis</div>
+        <div class="tab">Comments</div>
+        <div class="tab">Payments</div>
+        <div class="tab">Files</div>
+        <div class="tab">Forms</div>
+      </div>
+      <div class="record-toolbar">
+        <span class="back" onclick="goTo(0)">‹ Back To Invoice</span>
+        <button class="btn-outline">⤢ Toggle Full Screen Preview</button>
+        <div class="device-toggle">
+          <button>Mobile</button><button>Tablet</button><button class="active">Laptop</button>
+        </div>
+      </div>
+      <div class="record-body">
+        <div class="record-preview">
+          <div class="inv-doc">
+            <div class="inv-head">
+              <div class="inv-brand">
+                <div class="logo">AP</div>
+                <div>
+                  <div class="biz-name">Ace Plumbing &amp; HVAC</div>
+                  <div class="biz-meta">#AP20159<br>214 Ridgeline Dr<br>Denton, Texas 76201<br>(214) 555‑0142<br>support@acehvac.com</div>
+                </div>
+              </div>
+              <div class="inv-num">Invoice #1092<div class="badge">INVOICE</div></div>
+            </div>
+            <div class="inv-meta-row">
+              <div class="to">
+                <div style="font-weight:700;">Sarah Mitchell</div>
+                <div>(214) 555‑0198</div>
+                <div>214 Ridgeline Dr, Denton, TX 76201</div>
+              </div>
+              <div class="dates">
+                <div><b>Due Date:</b> Jul 24, 2026</div>
+                <div><b>Status:</b> Sent</div>
+                <div><b>Customer PO No.:</b> —</div>
+              </div>
+            </div>
+            <div class="inv-job-title">Water Heater Replacement</div>
+            <table class="inv-table">
+              <thead><tr><th>Item</th><th class="num">Unit Price</th><th class="num">Quantity</th><th>Taxed</th><th class="num">Amount</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Water Heater Unit</td>
+                  <td class="num" id="liUnit1">$850.00</td>
+                  <td class="num">1</td>
+                  <td>Yes</td>
+                  <td class="num" id="liAmt1">$850.00</td>
+                </tr>
+                <tr>
+                  <td>Labor</td>
+                  <td class="num" id="liUnit2">$75.00</td>
+                  <td class="num">2</td>
+                  <td>Yes</td>
+                  <td class="num" id="liAmt2">$150.00</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="inv-bottom">
+              <div class="inv-thanks">Thank you so much for your business!</div>
+              <div class="inv-totals">
+                <div class="r"><span class="muted-cell">Subtotal</span><span id="invSubtotal">$1,000.00</span></div>
+                <div class="r"><span class="muted-cell">Tax (8.25%)</span><span id="invTax">$82.50</span></div>
+
+                <div id="invTotalSingle">
+                  <div class="r strong"><span>Total</span><span id="invTotalSingleVal">$1,082.50</span></div>
+                </div>
+
+                <div id="invTotalSplit" class="split-box" style="display:none;">
+                  <div class="r card"><span>Total Card Price</span><span id="invTotalCard">$1,125.80</span></div>
+                  <div class="r ach"><span>Total ACH Price</span><span id="invTotalACH">$1,082.50</span></div>
+                </div>
+
+                <div class="r" style="margin-top:6px;"><span class="muted-cell">Amount Paid</span><span>$0.00</span></div>
+                <div id="invDueSingle">
+                  <div class="r"><span class="muted-cell">Amount Due</span><span id="invDueSingleVal">$1,082.50</span></div>
+                </div>
+                <div id="invDueSplit" style="display:none;">
+                  <div class="r"><span class="muted-cell">Amount Due (Card)</span><span id="invDueCard">$1,125.80</span></div>
+                  <div class="r"><span class="muted-cell">Amount Due (ACH)</span><span id="invDueACH">$1,082.50</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="record-settings">
+          <h3>Invoice Display Settings</h3>
+          <div class="check-row interactive" id="cfrCheckRow" onclick="setDual(!state.dual)">
+            <div class="box" id="cfrCheckBox">✓</div>
+            <div class="row-label">Display Card Fee Recovery</div>
+          </div>
+          <div class="check-row dim"><div class="box checked">✓</div><div class="row-label">Display Line Items</div></div>
+          <div class="check-row dim"><div class="box checked">✓</div><div class="row-label">Display Line Item Names</div></div>
+          <div class="check-row dim"><div class="box checked">✓</div><div class="row-label">Display Line Item Descriptions</div></div>
+          <div class="check-row dim"><div class="box"></div><div class="row-label">Display Line Item Item#/SKU</div></div>
+          <div class="check-row dim"><div class="box checked">✓</div><div class="row-label">Display Line Item Quantity</div></div>
+          <div class="check-row dim"><div class="box checked">✓</div><div class="row-label">Display Line Item Unit Price</div></div>
+          <div class="check-row dim"><div class="box"></div><div class="row-label">Display Line Item Tax</div></div>
+          <div class="check-row dim"><div class="box checked">✓</div><div class="row-label">Display Line Item Total Price</div></div>
+          <p class="helper-text">Uncheck "Display Card Fee Recovery" any time you don't want to pass card fees to a specific customer — it overrides your account default for this invoice only.</p>
+        </div>
+      </div>
+      <div class="demo-cta">
+        <button class="btn-secondary" onclick="goTo(0)">Back to List</button>
+        <button class="btn-primary" onclick="goTo(2)">Take Payment</button>
+      </div>
+    </div>
+
+    <!-- PAGE 2: Take Payment modal -->
+    <div class="page" data-page="takepayment">
+      <div class="header-light">
+        <button class="icon-btn" onclick="goTo(1)">‹</button>
+        <h1>Invoice #1092</h1>
+      </div>
+      <div class="tp-backdrop">
+        <div class="tp-ghost">
+          <div class="ghost-line" style="width:30%;"></div>
+          <div class="ghost-line" style="width:60%;"></div>
+          <div class="ghost-line" style="width:50%;"></div>
+          <div class="ghost-line" style="width:40%;height:60px;"></div>
+          <div class="ghost-line" style="width:70%;"></div>
+          <div class="ghost-line" style="width:45%;"></div>
+        </div>
+        <div class="tp-modal-wrap">
+          <div class="tp-subnav">
+            <div class="active">💳 Take Payment</div>
+            <div>📩 Request Payment</div>
+            <div>📝 Mark Payment</div>
+          </div>
+          <div class="tp-panel">
+            <div class="tp-panel-head"><h3>FieldPulse Payment</h3><span class="x" onclick="goTo(1)">✕</span></div>
+            <div class="tp-field-label">Amount ($) *</div>
+            <div class="tp-amount" id="tpAmount">1,082.50</div>
+
+            <div class="tp-cfr-row" onclick="setDual(!state.dual)">
+              <div class="box" id="tpCfrBox">✓</div>
+              <span class="lbl">Card Fee Recovery</span>
+            </div>
+
+            <div class="method-toggle">
+              <button id="tpCardBtn" onclick="setMethod('card')">💳 Credit card</button>
+              <button id="tpAchBtn" class="active" onclick="setMethod('ach')">🏦 Bank transfer</button>
+            </div>
+
+            <div class="tp-field-label">Card information</div>
+            <div class="card-brands"><span>VISA</span><span>MC</span><span>AMEX</span><span>DISCOVER</span></div>
+            <div class="fake-field">Card number</div>
+            <div class="fake-field-row">
+              <div class="fake-field">MM / YY</div>
+              <div class="fake-field">CVC</div>
+            </div>
+            <div class="tp-field-label" style="margin-top:10px;">Notes</div>
+            <div class="fake-notes"></div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-cta">
+        <span class="helper-text" style="margin:0;" id="tpHelper">Bank transfer selected — the ACH/cash price applies, no card fee.</span>
+        <button class="btn-primary" onclick="goTo(3)">Collect Payment</button>
+      </div>
+    </div>
+
+    <!-- PAGE 3: Payments -->
+    <div class="page" data-page="payments">
+      <div class="header-navy">
+        <button class="icon-btn" onclick="goTo(2)">‹</button>
+        <h1>FieldPulse Payments</h1>
+        <div class="toolbar">
+          <button class="icon-btn">🔍</button>
+          <button class="icon-btn">🔔</button>
+          <button class="icon-btn">↻</button>
+          <button class="icon-btn">🗒</button>
+          <button class="icon-btn">➕</button>
+          <button class="icon-btn">❓</button>
+        </div>
+        <div class="avatar-chip"><span class="circle">RH</span><span>Reina Howard</span><span style="color:#C9CCE6;">⌄</span></div>
+      </div>
+      <div class="tabs">
+        <div class="tab">FieldPulse Deposits</div>
+        <div class="tab active">FieldPulse Payments</div>
+        <div class="tab">FieldPulse Chargeback</div>
+      </div>
+      <div class="toolbar-row right">
+        <div class="icon-square">⬇</div>
+        <div class="icon-square">↻</div>
+        <span class="select-chip">15</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Invoice ID</th><th>Customer</th><th>Amount</th><th>Type</th><th>Status</th><th>Method</th><th>Created</th><th>Expected</th></tr>
+          </thead>
+          <tbody>
+            <tr class="demo-row">
+              <td>#1092</td><td>Sarah Mitchell</td>
+              <td id="paymentsAmount">$1,082.50</td>
+              <td><span class="pill blue">Payin</span></td>
+              <td><span class="pill green">Succeeded</span></td>
+              <td id="paymentsMethod"><span class="brand ach">🏦 0914</span></td>
+              <td>Just now</td>
+              <td>7/20</td>
+            </tr>
+            <tr>
+              <td>#3278</td><td>Shawn Banther</td><td>$259.48</td><td><span class="pill blue">Payin</span></td>
+              <td><span class="pill blue">Processing</span></td><td><span class="brand mc">●● 8834</span></td><td>7/17, 11:53 AM</td><td>7/20</td>
+            </tr>
+            <tr>
+              <td>#3178</td><td>James Ross</td><td>$65.27</td><td><span class="pill blue">Payin</span></td>
+              <td><span class="pill blue">Processing</span></td><td><span class="brand visa">VISA 9155</span></td><td>7/17, 11:02 AM</td><td>7/20</td>
+            </tr>
+            <tr>
+              <td>#3265</td><td>Alan Roberts</td><td>$140.71</td><td><span class="pill blue">Payin</span></td>
+              <td><span class="pill green">Succeeded</span></td><td><span class="brand mc">●● 1067</span></td><td>7/16, 5:14 PM</td><td>7/17</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="footer-row">
+        <span>1 to 4 of more</span>
+        <div class="pager"><button>|«</button><button>‹</button><span>Page 1 of more</span><button>›</button><button>»|</button></div>
+        <span class="select-chip">15</span>
+      </div>
+      <div class="demo-cta">
+        <span class="helper-text" style="margin:0;" id="paymentsHelper">Sarah Mitchell paid by bank transfer — no card fee involved.</span>
+        <button class="btn-primary" onclick="goTo(4)">View Deposit</button>
+      </div>
+    </div>
+
+    <!-- PAGE 4: Deposits -->
+    <div class="page" data-page="deposits">
+      <div class="header-navy">
+        <button class="icon-btn" onclick="goTo(3)">‹</button>
+        <h1>FieldPulse Payments</h1>
+        <div class="toolbar">
+          <button class="icon-btn">🔍</button>
+          <button class="icon-btn">🔔</button>
+          <button class="icon-btn">↻</button>
+          <button class="icon-btn">🗒</button>
+          <button class="icon-btn">➕</button>
+          <button class="icon-btn">❓</button>
+        </div>
+        <div class="avatar-chip"><span class="circle">RH</span><span>Reina Howard</span><span style="color:#C9CCE6;">⌄</span></div>
+      </div>
+      <div class="tabs">
+        <div class="tab active">FieldPulse Deposits</div>
+        <div class="tab">FieldPulse Payments</div>
+        <div class="tab">FieldPulse Chargeback</div>
+      </div>
+      <div class="toolbar-row right">
+        <div class="icon-square">⬇</div>
+        <div class="icon-square">↻</div>
+        <span class="select-chip">15</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Amount</th><th>Deposit Type</th><th>Status</th><th>Method</th><th>Created</th><th>ID</th></tr></thead>
+          <tbody id="depositsDemoRows"></tbody>
+          <tbody>
+            <tr>
+              <td>($23.77)</td><td><span class="pill blue">Billing</span></td><td><span class="pill blue">Processing</span></td>
+              <td><span class="brand ach">🏦 0914</span></td><td>7/17, 10:02 AM</td><td class="muted-cell">dep_•••9DTPJe</td>
+            </tr>
+            <tr>
+              <td>$592.13</td><td><span class="pill green">Funding</span></td><td><span class="pill green">Succeeded</span></td>
+              <td><span class="brand ach">🏦 0914</span></td><td>7/17, 10:02 AM</td><td class="muted-cell">dep_•••rxOQt7</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="net-line">
+        <span>Net deposited to Ace Plumbing on this invoice</span>
+        <span id="netDeposit">$1,082.50</span>
+      </div>
+      <div class="demo-cta">
+        <span class="helper-text" style="margin:0;" id="depositsHelper">No card fee — the full ACH price lands in the bank.</span>
+        <button class="btn-primary" onclick="goTo(5)">See Business Impact</button>
+      </div>
+    </div>
+
+    <!-- PAGE 5: Business impact -->
+    <div class="page" data-page="impact">
+      <div class="header-light">
+        <button class="icon-btn" onclick="goTo(4)">‹</button>
+        <h1>Business Impact — Invoice #1092</h1>
+      </div>
+      <div class="impact-body">
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-label">Processing fee on this payment</div>
+            <div class="stat-value" id="impactFee">$0.00</div>
+            <div class="stat-sub" id="impactFeeSub">No processing fee — paid by bank transfer.</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Who actually pays it</div>
+            <div class="stat-value" id="impactWho" style="font-size:17px;">—</div>
+            <div class="stat-sub" id="impactWhoSub"></div>
+          </div>
+        </div>
+        <div class="stat-card" style="background:#F8F9FC;">
+          <div class="stat-label">Estimated Monthly Impact</div>
+          <div class="stat-sub" style="margin-top:2px;">Based on $30,000 in monthly card volume across ~120 card transactions.</div>
+          <div class="impact-row"><span class="muted-cell">Without CFR — absorbed</span><span style="font-weight:800;color:var(--amber);">~$930</span></div>
+          <div class="impact-row" style="border-top:1px solid var(--border);"><span class="muted-cell">With CFR (full 4% passed) — recovered</span><span style="font-weight:800;color:var(--green);">~$1,200</span></div>
+          <div class="stat-sub" style="margin-top:8px;">Illustrative only — actual results vary by processor and card mix.</div>
+        </div>
+        <p class="compliance-note" style="margin-top:14px;">
+          <strong>How CFR pricing works:</strong> CFR passes 3% to customers by default (3.5% with Next Day Funding), which lowers your own processing cost to 1%. Pass the full 4% (4.5% with NDF) — as this invoice does — and your cost drops to 0%. It's a compliant dual pricing model, legal in all 50 states and compliant with all major card brands — not a surcharge, which is heavily restricted and even illegal in some states.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="panel">
+  <h1>Desktop CFR Demo</h1>
+  <p class="sub">Walk through enabling Card Fee Recovery manually on a single invoice from the FieldPulse back office — jump to any step.</p>
+
+  <div class="compliance-badge">
+    <div class="dot">✓</div>
+    <p><strong>CFR is a compliant dual pricing program — legal in all 50 states.</strong>
+    It shows a separate cash/ACH price and card price, disclosed upfront. Surcharging (adding the fee at the end) is restricted or illegal in some states — CFR isn't that.</p>
+  </div>
+
+  <div class="panel-section-label">Steps</div>
+  <ul class="step-list" id="stepList">
+    <li data-step="0"><span class="num">1</span><span class="step-title">Invoices List</span></li>
+    <li data-step="1"><span class="num">2</span><span class="step-title">Enable/Disable CFR on Invoice</span></li>
+    <li data-step="2"><span class="num">3</span><span class="step-title">Take Payment</span></li>
+    <li data-step="3"><span class="num">4</span><span class="step-title">Customer Payment</span></li>
+    <li data-step="4"><span class="num">5</span><span class="step-title">Deposit Lands</span></li>
+    <li data-step="5"><span class="num">6</span><span class="step-title">Business Impact</span></li>
+  </ul>
+
+  <div class="panel-section-label">Card Fee Recovery (This Invoice)</div>
+  <div class="seg" id="dualSeg">
+    <button data-val="off">Off</button>
+    <button data-val="on">On</button>
+  </div>
+  <p class="helper-text" id="dualHelper">Manual, per invoice — toggle it from "Display Card Fee Recovery" or right on the Take Payment screen.</p>
+
+  <div class="panel-section-label">Customer Pays With</div>
+  <div class="seg" id="methodSeg">
+    <button data-val="ach">Cash / ACH</button>
+    <button data-val="card">Card</button>
+  </div>
+  <p class="helper-text">Card fees only apply on card payments — ACH never has a card network cost.</p>
+
+  <button class="restart-btn" onclick="restartDemo()">Restart Demo</button>
+</div>
+
+<script>
+  const state = { step: 0, dual: false, method: 'ach' };
+
+  // ---- base invoice figures (Water Heater Unit $850 + Labor 2hrs @ $75/hr = $1,000 subtotal) ----
+  const unitWaterHeater = 850.00;
+  const unitLaborHourly = 75.00;
+  const laborQty = 2;
+  const subtotalACH = unitWaterHeater + (unitLaborHourly * laborQty); // 1000.00
+  const taxRate = 0.0825;
+
+  // CFR full pass-through rate used on this invoice (merchant chose to pass the entire 4%
+  // — the max option per FAQ — which is what reduces the merchant's own cost to 0%).
+  const passRate = 0.04;
+
+  function r2(x){ return Math.round((x + Number.EPSILON) * 100) / 100; }
+  function fmt(n){
+    const sign = n < 0 ? '-' : '';
+    return sign + '$' + Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  const unitWaterHeaterCard = r2(unitWaterHeater * (1 + passRate)); // 884.00
+  const unitLaborCard = r2(unitLaborHourly * (1 + passRate)); // 78.00
+  const subtotalCard = r2(unitWaterHeaterCard + unitLaborCard * laborQty); // 1040.00
+  const taxACH = r2(subtotalACH * taxRate); // 82.50
+  const taxCard = r2(subtotalCard * taxRate); // 85.80
+  const totalACH = r2(subtotalACH + taxACH); // 1082.50
+  const totalCard = r2(subtotalCard + taxCard); // 1125.80
+  const feeCollected = r2(totalCard - totalACH); // 43.30 — exactly what CFR passes to the customer
+
+  // Real-world cost of accepting a card WITHOUT CFR at all (a standard flat-rate
+  // processor: ~3% + $0.25/transaction), fully absorbed by the business.
+  const standardRate = 0.03;
+  const standardFlatFee = 0.25;
+  const standardFee = r2(totalACH * standardRate + standardFlatFee); // 32.73
+
+  function goTo(step){ state.step = step; render(); }
+  function setDual(on){ state.dual = on; render(); }
+  function setMethod(m){ state.method = m; render(); }
+  function restartDemo(){ state.step = 0; state.dual = false; state.method = 'ach'; render(); }
+
+  document.querySelectorAll('#dualSeg button').forEach(btn => btn.addEventListener('click', () => setDual(btn.dataset.val === 'on')));
+  document.querySelectorAll('#methodSeg button').forEach(btn => btn.addEventListener('click', () => setMethod(btn.dataset.val)));
+  document.querySelectorAll('#stepList li').forEach(li => li.addEventListener('click', () => goTo(parseInt(li.dataset.step, 10))));
+
+  const pageOrder = ['invoices','record','takepayment','payments','deposits','impact'];
+
+  function render(){
+    document.querySelectorAll('.page').forEach(p => {
+      p.classList.toggle('active', pageOrder.indexOf(p.dataset.page) === state.step);
+    });
+    document.querySelectorAll('#stepList li').forEach(li => li.classList.toggle('active', parseInt(li.dataset.step,10) === state.step));
+    document.querySelectorAll('#dualSeg button').forEach(btn => btn.classList.toggle('active', (btn.dataset.val === 'on') === state.dual));
+    document.querySelectorAll('#methodSeg button').forEach(btn => btn.classList.toggle('active', btn.dataset.val === state.method));
+    document.getElementById('dualHelper').textContent = state.dual
+      ? 'Card Fee Recovery is ON — Sarah Mitchell sees a card price and an ACH price on this invoice.'
+      : 'Manual, per invoice — toggle it from "Display Card Fee Recovery" or right on the Take Payment screen.';
+
+    // Invoices list
+    document.getElementById('invoicesAmount').textContent = fmt(totalACH);
+    document.getElementById('invoicesAmountDue').textContent = state.dual ? fmt(totalCard) : fmt(totalACH);
+    document.getElementById('invoiceCfrBadge').style.display = state.dual ? 'inline-block' : 'none';
+
+    // Invoice Record checkbox + preview
+    document.getElementById('cfrCheckBox').classList.toggle('checked', state.dual);
+    document.getElementById('cfrCheckBox').textContent = state.dual ? '✓' : '';
+
+    document.getElementById('liUnit1').textContent = state.dual ? fmt(unitWaterHeaterCard) : fmt(unitWaterHeater);
+    document.getElementById('liAmt1').textContent = state.dual ? fmt(unitWaterHeaterCard) : fmt(unitWaterHeater);
+    document.getElementById('liUnit2').textContent = state.dual ? fmt(unitLaborCard) : fmt(unitLaborHourly);
+    document.getElementById('liAmt2').textContent = state.dual ? fmt(unitLaborCard * laborQty) : fmt(unitLaborHourly * laborQty);
+
+    document.getElementById('invSubtotal').textContent = state.dual ? fmt(subtotalCard) : fmt(subtotalACH);
+    document.getElementById('invTax').textContent = state.dual ? fmt(taxCard) : fmt(taxACH);
+    document.getElementById('invTotalSingle').style.display = state.dual ? 'none' : 'block';
+    document.getElementById('invTotalSplit').style.display = state.dual ? 'block' : 'none';
+    document.getElementById('invTotalSingleVal').textContent = fmt(totalACH);
+    document.getElementById('invTotalCard').textContent = fmt(totalCard);
+    document.getElementById('invTotalACH').textContent = fmt(totalACH);
+    document.getElementById('invDueSingle').style.display = state.dual ? 'none' : 'block';
+    document.getElementById('invDueSplit').style.display = state.dual ? 'block' : 'none';
+    document.getElementById('invDueSingleVal').textContent = fmt(totalACH);
+    document.getElementById('invDueCard').textContent = fmt(totalCard);
+    document.getElementById('invDueACH').textContent = fmt(totalACH);
+
+    // Take Payment modal
+    const charged = (state.dual && state.method === 'card') ? totalCard : totalACH;
+    document.getElementById('tpAmount').textContent = charged.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    document.getElementById('tpCfrBox').classList.toggle('checked', state.dual);
+    document.getElementById('tpCfrBox').textContent = state.dual ? '✓' : '';
+    document.getElementById('tpCardBtn').classList.toggle('active', state.method === 'card');
+    document.getElementById('tpAchBtn').classList.toggle('active', state.method === 'ach');
+    document.getElementById('tpHelper').textContent = state.method === 'ach'
+      ? 'Bank transfer selected — the ACH/cash price applies, no card fee.'
+      : (state.dual
+          ? 'Credit card selected with CFR on — the higher card price covers the fee.'
+          : 'Credit card selected with CFR off — the flat price applies; the business absorbs the fee.');
+
+    // fee actually withdrawn by the processor on this transaction
+    const feeOnThisTxn = state.method === 'card' ? (state.dual ? feeCollected : standardFee) : 0;
+    const net = charged - feeOnThisTxn;
+
+    // Payments tab
+    document.getElementById('paymentsAmount').textContent = fmt(charged);
+    document.getElementById('paymentsMethod').innerHTML = state.method === 'card'
+      ? '<span class="brand mc">●● 4242</span>'
+      : '<span class="brand ach">🏦 0914</span>';
+    document.getElementById('paymentsHelper').textContent = state.method === 'ach'
+      ? 'Sarah Mitchell paid by bank transfer — no card fee involved.'
+      : (state.dual
+          ? 'Sarah Mitchell paid the card price ($' + charged.toFixed(2) + ') — it fully covers the card fee.'
+          : 'Sarah Mitchell paid the flat price by card — Ace Plumbing absorbs the card fee.');
+
+    // Deposits tab
+    const depositRows = document.getElementById('depositsDemoRows');
+    let rowsHtml = '';
+    if (state.method === 'card') {
+      rowsHtml += '<tr class="demo-row"><td>(' + fmt(feeOnThisTxn) + ')</td><td><span class="pill blue">Billing</span></td><td><span class="pill green">Succeeded</span></td><td><span class="brand ach">🏦 0914</span></td><td>Just now</td><td class="muted-cell">dep_•••fee1092</td></tr>';
+      rowsHtml += '<tr class="demo-row"><td>' + fmt(charged) + '</td><td><span class="pill green">Funding</span></td><td><span class="pill green">Succeeded</span></td><td><span class="brand ach">🏦 0914</span></td><td>Just now</td><td class="muted-cell">dep_•••pay1092</td></tr>';
+    } else {
+      rowsHtml += '<tr class="demo-row"><td>' + fmt(charged) + '</td><td><span class="pill green">Funding</span></td><td><span class="pill green">Succeeded</span></td><td><span class="brand ach">🏦 0914</span></td><td>Just now</td><td class="muted-cell">dep_•••pay1092</td></tr>';
+    }
+    depositRows.innerHTML = rowsHtml;
+    document.getElementById('netDeposit').textContent = fmt(net);
+    if (state.method === 'ach') {
+      document.getElementById('depositsHelper').textContent = 'No card fee — the full ACH price lands in the bank.';
+    } else if (state.dual) {
+      document.getElementById('depositsHelper').textContent = 'The card price included the full $' + feeCollected.toFixed(2) + ' fee — Ace Plumbing still nets the full $' + totalACH.toFixed(2) + ' ACH-equivalent value.';
+    } else {
+      document.getElementById('depositsHelper').textContent = 'The $' + standardFee.toFixed(2) + ' processing fee came straight out of this deposit — absorbed by Ace Plumbing.';
+    }
+
+    // Business impact page
+    document.getElementById('impactFee').textContent = fmt(feeOnThisTxn);
+    if (state.method === 'ach') {
+      document.getElementById('impactFeeSub').textContent = 'No processing fee — paid by bank transfer.';
+      document.getElementById('impactWho').textContent = 'N/A';
+      document.getElementById('impactWhoSub').textContent = 'Bank transfers have no card network fee to cover.';
+      document.getElementById('impactFee').className = 'stat-value';
+    } else if (state.dual) {
+      document.getElementById('impactFeeSub').textContent = 'The full card processing fee on this $' + totalACH.toFixed(2) + ' job, at the 4% CFR rate.';
+      document.getElementById('impactWho').textContent = 'Customer, via the card price';
+      document.getElementById('impactWhoSub').textContent = 'Passing the full 4% drops Ace Plumbing\'s cost to $0 — they still net the full $' + totalACH.toFixed(2) + ' ACH-equivalent value.';
+      document.getElementById('impactFee').className = 'stat-value green';
+    } else {
+      document.getElementById('impactFeeSub').textContent = 'What Ace Plumbing pays a standard processor without CFR (about 3% + $0.25/transaction).';
+      document.getElementById('impactWho').textContent = 'Ace Plumbing (absorbed)';
+      document.getElementById('impactWhoSub').textContent = 'Without CFR, this $' + standardFee.toFixed(2) + ' comes straight out of the job\'s margin — not shown anywhere on the invoice.';
+      document.getElementById('impactFee').className = 'stat-value amber';
+    }
+  }
+
+  render();
+</script>
+</body>
+</html>
